@@ -1,0 +1,338 @@
+#import bevy_pbr::{
+    mesh_functions,
+    view_transformations::position_world_to_clip
+}
+
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<storage, read> colors: array<vec4<f32>, 5>;
+
+struct Vertex {
+    @builtin(instance_index) instance_index: u32,
+    @location(0) position: vec3<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) world_position: vec4<f32>,
+    @location(1) color: vec4<f32>,
+};
+
+@vertex
+fn vertex(vertex: Vertex) -> VertexOutput {
+    var out: VertexOutput;
+    let tag = mesh_functions::get_tag(vertex.instance_index);
+    var world_from_local = mesh_functions::get_world_from_local(vertex.instance_index);
+    out.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, vec4(vertex.position, 1.0));
+    out.clip_position = position_world_to_clip(out.world_position.xyz);
+
+    out.color = colors[tag];
+    return out;
+}
+
+@fragment
+fn fragment(
+    mesh: VertexOutput,
+) -> @location(0) vec4<f32> {
+    return mesh.color;
+}
+
+
+//! This example demonstrates how to use a storage buffer with `AsBindGroup` in a custom material.
+use bevy::{
+    mesh::MeshTag,
+    prelude::*,
+    reflect::TypePath,
+    render::{render_resource::AsBindGroup, storage::ShaderStorageBuffer},
+    shader::ShaderRef,
+};
+
+const SHADER_ASSET_PATH: &str = "shaders/storage_buffer.wgsl";
+
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
+        .add_systems(Startup, setup)
+        .add_systems(Update, update)
+        .run();
+}
+
+/// set up a simple 3D scene
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
+) {
+    // Example data for the storage buffer
+    let color_data: Vec<[f32; 4]> = vec![
+        [1.0, 0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 1.0],
+        [1.0, 1.0, 0.0, 1.0],
+        [0.0, 1.0, 1.0, 1.0],
+    ];
+
+    let colors = buffers.add(ShaderStorageBuffer::from(color_data));
+
+    let mesh_handle = meshes.add(Cuboid::from_size(Vec3::splat(0.3)));
+    // Create the custom material with the storage buffer
+    let material_handle = materials.add(CustomMaterial {
+        colors: colors.clone(),
+    });
+
+    commands.insert_resource(CustomMaterialHandle(material_handle.clone()));
+
+    // Spawn cubes with the custom material
+    let mut current_color_id: u32 = 0;
+    for i in -6..=6 {
+        for j in -3..=3 {
+            commands.spawn((
+                Mesh3d(mesh_handle.clone()),
+                MeshMaterial3d(material_handle.clone()),
+                MeshTag(current_color_id % 5),
+                Transform::from_xyz(i as f32, j as f32, 0.0),
+            ));
+            current_color_id += 1;
+        }
+    }
+
+    // Camera
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(0.0, 0.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+}
+
+// Update the material color by time
+fn update(
+    time: Res<Time>,
+    material_handles: Res<CustomMaterialHandle>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
+    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
+) {
+    let material = materials.get_mut(&material_handles.0).unwrap();
+
+    let buffer = buffers.get_mut(&material.colors).unwrap();
+    buffer.set_data(
+        (0..5)
+            .map(|i| {
+                let t = time.elapsed_secs() * 5.0;
+                [
+                    ops::sin(t + i as f32) / 2.0 + 0.5,
+                    ops::sin(t + i as f32 + 2.0) / 2.0 + 0.5,
+                    ops::sin(t + i as f32 + 4.0) / 2.0 + 0.5,
+                    1.0,
+                ]
+            })
+            .collect::<Vec<[f32; 4]>>(),
+    );
+}
+
+// Holds handles to the custom materials
+#[derive(Resource)]
+struct CustomMaterialHandle(Handle<CustomMaterial>);
+
+// This struct defines the data that will be passed to your shader
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+struct CustomMaterial {
+    #[storage(0, read_only)]
+    colors: Handle<ShaderStorageBuffer>,
+}
+
+impl Material for CustomMaterial {
+    fn vertex_shader() -> ShaderRef {
+        SHADER_ASSET_PATH.into()
+    }
+
+    fn fragment_shader() -> ShaderRef {
+        SHADER_ASSET_PATH.into()
+    }
+}
+
+//! This example demonstrates how to use a storage buffer with `AsBindGroup` in a custom material.
+use bevy::{
+    mesh::MeshTag,
+    prelude::*,
+    reflect::TypePath,
+    render::{render_resource::AsBindGroup, storage::ShaderStorageBuffer},
+    shader::ShaderRef,
+};
+
+const SHADER_ASSET_PATH: &str = "shaders/storage_buffer.wgsl";
+
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
+        .add_systems(Startup, setup)
+        .add_systems(Update, update)
+        .run();
+}
+
+/// set up a simple 3D scene
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
+) {
+    // Example data for the storage buffer
+    let color_data: Vec<[f32; 4]> = vec![
+        [1.0, 0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 1.0],
+        [1.0, 1.0, 0.0, 1.0],
+        [0.0, 1.0, 1.0, 1.0],
+    ];
+
+    let colors = buffers.add(ShaderStorageBuffer::from(color_data));
+
+    let mesh_handle = meshes.add(Cuboid::from_size(Vec3::splat(0.3)));
+    // Create the custom material with the storage buffer
+    let material_handle = materials.add(CustomMaterial {
+        colors: colors.clone(),
+    });
+
+    commands.insert_resource(CustomMaterialHandle(material_handle.clone()));
+
+    // Spawn cubes with the custom material
+    let mut current_color_id: u32 = 0;
+    for i in -6..=6 {
+        for j in -3..=3 {
+            commands.spawn((
+                Mesh3d(mesh_handle.clone()),
+                MeshMaterial3d(material_handle.clone()),
+                MeshTag(current_color_id % 5),
+                Transform::from_xyz(i as f32, j as f32, 0.0),
+            ));
+            current_color_id += 1;
+        }
+    }
+
+    // Camera
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(0.0, 0.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+}
+
+// Update the material color by time
+fn update(
+    time: Res<Time>,
+    material_handles: Res<CustomMaterialHandle>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
+    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
+) {
+    let material = materials.get_mut(&material_handles.0).unwrap();
+
+    let buffer = buffers.get_mut(&material.colors).unwrap();
+    buffer.set_data(
+        (0..5)
+            .map(|i| {
+                let t = time.elapsed_secs() * 5.0;
+                [
+                    ops::sin(t + i as f32) / 2.0 + 0.5,
+                    ops::sin(t + i as f32 + 2.0) / 2.0 + 0.5,
+                    ops::sin(t + i as f32 + 4.0) / 2.0 + 0.5,
+                    1.0,
+                ]
+            })
+            .collect::<Vec<[f32; 4]>>(),
+    );
+}
+
+// Holds handles to the custom materials
+#[derive(Resource)]
+struct CustomMaterialHandle(Handle<CustomMaterial>);
+
+// This struct defines the data that will be passed to your shader
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+struct CustomMaterial {
+    #[storage(0, read_only)]
+    colors: Handle<ShaderStorageBuffer>,
+}
+
+impl Material for CustomMaterial {
+    fn vertex_shader() -> ShaderRef {
+        SHADER_ASSET_PATH.into()
+    }
+
+    fn fragment_shader() -> ShaderRef {
+        SHADER_ASSET_PATH.into()
+    }
+}
+
+use bevy::{
+    prelude::*,
+    reflect::TypePath,
+    render::render_resource::{AsBindGroup, ShaderRef},
+    sprite::{AlphaMode2d, Material2d, Material2dPlugin},
+};
+
+/// This example uses a shader source file from the assets subdirectory
+const SHADER_ASSET_PATH: &str = "shaders/custom_material_2d.wgsl";
+
+fn main() {
+    App::new()
+        .add_plugins((
+            DefaultPlugins,
+            Material2dPlugin::<CustomMaterial>::default(),
+        ))
+        .add_systems(Startup, setup)
+        .run();
+}
+
+// Setup a simple 2d scene
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
+    asset_server: Res<AssetServer>,
+) {
+    // camera
+    commands.spawn(Camera2d);
+
+    // quad
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::default())),
+        MeshMaterial2d(materials.add(CustomMaterial {
+            color: LinearRgba::BLUE,
+            color_texture: Some(asset_server.load("branding/icon.png")),
+        })),
+        Transform::default().with_scale(Vec3::splat(128.)),
+    ));
+}
+
+// This is the struct that will be passed to your shader
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+struct CustomMaterial {
+    #[uniform(0)]
+    color: LinearRgba,
+    #[texture(1)]
+    #[sampler(2)]
+    color_texture: Option<Handle<Image>>,
+}
+
+/// The Material2d trait is very configurable, but comes with sensible defaults for all methods.
+/// You only need to implement functions for features that need non-default behavior. See the Material2d api docs for details!
+impl Material2d for CustomMaterial {
+    fn fragment_shader() -> ShaderRef {
+        SHADER_ASSET_PATH.into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode2d {
+        AlphaMode2d::Mask(0.5)
+    }
+}
+
+
+#import bevy_sprite::mesh2d_vertex_output::VertexOutput
+// we can import items from shader modules in the assets folder with a quoted path
+#import "shaders/custom_material_import.wgsl"::COLOR_MULTIPLIER
+
+@group(2) @binding(0) var<uniform> material_color: vec4<f32>;
+@group(2) @binding(1) var base_color_texture: texture_2d<f32>;
+@group(2) @binding(2) var base_color_sampler: sampler;
+
+@fragment
+fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
+    return material_color * textureSample(base_color_texture, base_color_sampler, mesh.uv) * COLOR_MULTIPLIER;
+}

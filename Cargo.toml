@@ -1,0 +1,14 @@
+[package]
+name = "BoneBorder"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.18.1"
+bevy_mesh = "0.18.1"
+bevy_vector_shapes = "0.12.0"
+bytemuck = "1.25.0"
+i_overlay = "4.5.1"
+i_triangle = "0.41.0"
+num-traits = "0.2.19"
+rayon = "1.11.0"
