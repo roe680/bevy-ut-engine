@@ -1,22 +1,22 @@
-use bevy::{ecs::system::Query, math::Vec3, transform::components::Transform};
+use bevy::prelude::*;
 
 use crate::{
-    helpers::{easing::Easing, time::LifeTimer},
-    move_animation::moving::{Animations, create_default},
+    helpers::time::LifeTimer,
+    move_animation::moving::{create_default, Animations},
 };
 
 pub enum To {
-    MoveTo(Easing, Option<Vec3>, Vec3, Vec3),
-    AddTo(Easing, Vec3, Vec3),
+    MoveTo(EaseFunction, Option<Vec3>, Vec3, Vec3),
+    AddTo(EaseFunction, Vec3, Vec3),
 }
 
 impl Animations<To> {
-    pub fn move_to(mut self, to: Vec3, ease: Easing) -> Self {
+    pub fn move_to(mut self, to: Vec3, ease: EaseFunction) -> Self {
         self.0
             .push(create_default(To::MoveTo(ease, None, to, Vec3::ZERO)));
         self
     }
-    pub fn add_to(mut self, to: Vec3, ease: Easing) -> Self {
+    pub fn add_to(mut self, to: Vec3, ease: EaseFunction) -> Self {
         self.0.push(create_default(To::AddTo(ease, to, Vec3::ZERO)));
         self
     }
@@ -38,13 +38,13 @@ pub fn animation_to(mut query: Query<(&mut Transform, &mut Animations<To>, &Life
                             *start = Some(transform.translation);
                         }
                         if let Some(start_val) = start {
-                            let lerp = (*to - *start_val) * ease.ease(t);
+                            let lerp = (*to - *start_val) * ease.sample_clamped(t);
                             transform.translation += lerp - *memory;
                             *memory = lerp;
                         }
                     }
                     To::AddTo(ease, to, memory) => {
-                        let lerp = *to * ease.ease(t);
+                        let lerp = *to * ease.sample_clamped(t);
                         transform.translation += lerp - *memory;
                         *memory = lerp;
                     }

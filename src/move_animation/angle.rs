@@ -1,17 +1,17 @@
-use bevy::{ecs::system::Query, math::Quat, transform::components::Transform};
+use bevy::prelude::*;
 
 use crate::{
-    helpers::{easing::Easing, time::LifeTimer},
-    move_animation::moving::{Animations, create_default},
+    helpers::time::LifeTimer,
+    move_animation::moving::{create_default, Animations},
 };
 
 pub enum Angle {
-    MoveAngle(Easing, Option<Quat>, f32, Quat),
-    AddAngle(Easing, f32, Quat),
+    MoveAngle(EaseFunction, Option<Quat>, f32, Quat),
+    AddAngle(EaseFunction, f32, Quat),
 }
 
 impl Animations<Angle> {
-    pub fn move_angle(mut self, angle: f32, ease: Easing) -> Self {
+    pub fn move_angle(mut self, angle: f32, ease: EaseFunction) -> Self {
         self.0.push(create_default(Angle::MoveAngle(
             ease,
             None,
@@ -20,7 +20,7 @@ impl Animations<Angle> {
         )));
         self
     }
-    pub fn add_angle(mut self, angle: f32, ease: Easing) -> Self {
+    pub fn add_angle(mut self, angle: f32, ease: EaseFunction) -> Self {
         self.0
             .push(create_default(Angle::AddAngle(ease, angle, Quat::IDENTITY)));
         self
@@ -46,8 +46,8 @@ pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<Angle>,
                             let to_quat = Quat::from_rotation_z(*to);
 
                             // 目標回転を球面線形補間で計算
-                            let target_rotation =
-                                start_val.slerp(to_quat, ease.ease(t)) * start_val.inverse();
+                            let target_rotation = start_val.slerp(to_quat, ease.sample_clamped(t))
+                                * start_val.inverse();
 
                             // 前フレームからの差分を計算（クォータニオンの差分）
                             let rotation_delta = memory.inverse() * target_rotation;
@@ -60,7 +60,8 @@ pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<Angle>,
                         }
                     }
                     Angle::AddAngle(ease, angle, memory) => {
-                        let target_rotation = Quat::from_rotation_z(*angle * ease.ease(t));
+                        let target_rotation =
+                            Quat::from_rotation_z(*angle * ease.sample_clamped(t));
                         let rotation_delta = memory.inverse() * target_rotation;
                         transform.rotation = transform.rotation * rotation_delta;
                         *memory = target_rotation;

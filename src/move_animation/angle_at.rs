@@ -1,21 +1,17 @@
-use bevy::{
-    ecs::system::Query,
-    math::{Quat, Vec3},
-    transform::components::Transform,
-};
+use bevy::prelude::*;
 
 use crate::{
-    helpers::{easing::Easing, time::LifeTimer},
-    move_animation::moving::{Animations, create_default},
+    helpers::time::LifeTimer,
+    move_animation::moving::{create_default, Animations},
 };
 
 pub enum AngleAt {
-    MoveAngleAt(Easing, Option<Quat>, f32, Quat, Vec3, Option<Vec3>),
-    AddAngleAt(Easing, f32, Quat, Vec3, Option<Vec3>),
+    MoveAngleAt(EaseFunction, Option<Quat>, f32, Quat, Vec3, Option<Vec3>),
+    AddAngleAt(EaseFunction, f32, Quat, Vec3, Option<Vec3>),
 }
 
 impl Animations<AngleAt> {
-    pub fn move_angle_at(mut self, angle: f32, at: Vec3, ease: Easing) -> Self {
+    pub fn move_angle_at(mut self, angle: f32, at: Vec3, ease: EaseFunction) -> Self {
         self.0.push(create_default(AngleAt::MoveAngleAt(
             ease,
             None,
@@ -26,7 +22,7 @@ impl Animations<AngleAt> {
         )));
         self
     }
-    pub fn add_angle_at(mut self, angle: f32, at: Vec3, ease: Easing) -> Self {
+    pub fn add_angle_at(mut self, angle: f32, at: Vec3, ease: EaseFunction) -> Self {
         self.0.push(create_default(AngleAt::AddAngleAt(
             ease,
             angle,
@@ -63,8 +59,8 @@ pub fn animation_angle_at(
                             let to_quat = Quat::from_rotation_z(*to);
 
                             // 目標回転を球面線形補間で計算
-                            let target_rotation =
-                                start_val.slerp(to_quat, ease.ease(t)) * start_val.inverse();
+                            let target_rotation = start_val.slerp(to_quat, ease.sample_clamped(t))
+                                * start_val.inverse();
                             // 前フレームの回転
                             let prev_rotation = *angle_memory;
                             // 回転も更新
@@ -89,7 +85,8 @@ pub fn animation_angle_at(
                             *at_memory = Some(transform.translation - *at);
                         }
                         if let Some(prev_pos) = at_memory {
-                            let target_rotation = Quat::from_rotation_z(*angle * ease.ease(t));
+                            let target_rotation =
+                                Quat::from_rotation_z(*angle * ease.sample_clamped(t));
                             let rotation_delta = angle_memory.inverse() * target_rotation;
 
                             // 今フレームの回転後座標

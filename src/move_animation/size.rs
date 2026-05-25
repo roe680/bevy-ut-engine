@@ -1,22 +1,22 @@
-use bevy::{ecs::system::Query, math::Vec3, transform::components::Transform};
+use bevy::prelude::*;
 
 use crate::{
-    helpers::{easing::Easing, time::LifeTimer},
-    move_animation::moving::{Animations, create_default},
+    helpers::time::LifeTimer,
+    move_animation::moving::{create_default, Animations},
 };
 
 pub enum Size {
-    MoveSize(Easing, Option<Vec3>, Vec3, Vec3),
-    AddSize(Easing, Vec3, Vec3),
+    MoveSize(EaseFunction, Option<Vec3>, Vec3, Vec3),
+    AddSize(EaseFunction, Vec3, Vec3),
 }
 
 impl Animations<Size> {
-    pub fn move_size(mut self, size: Vec3, ease: Easing) -> Self {
+    pub fn move_size(mut self, size: Vec3, ease: EaseFunction) -> Self {
         self.0
             .push(create_default(Size::MoveSize(ease, None, size, Vec3::ZERO)));
         self
     }
-    pub fn add_size(mut self, size: Vec3, ease: Easing) -> Self {
+    pub fn add_size(mut self, size: Vec3, ease: EaseFunction) -> Self {
         self.0
             .push(create_default(Size::AddSize(ease, size, Vec3::ZERO)));
         self
@@ -39,13 +39,13 @@ pub fn animation_size(mut query: Query<(&mut Transform, &mut Animations<Size>, &
                             *start = Some(transform.scale);
                         }
                         if let Some(start_val) = start {
-                            let lerp = (*to - *start_val) * ease.ease(t);
+                            let lerp = (*to - *start_val) * ease.sample_clamped(t);
                             transform.scale += lerp - *memory;
                             *memory = lerp;
                         }
                     }
                     Size::AddSize(ease, size, memory) => {
-                        let lerp = *size * ease.ease(t);
+                        let lerp = *size * ease.sample_clamped(t);
                         transform.scale += lerp - *memory;
                         *memory = lerp;
                     }

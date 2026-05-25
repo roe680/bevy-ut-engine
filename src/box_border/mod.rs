@@ -1,6 +1,8 @@
-pub mod box_drawer;
-pub mod box_moving;
-pub mod box_moving_fn;
+pub mod animations;
+pub mod box_draw;
+pub mod box_plugin;
 pub mod box_struct;
 pub mod boxs;
 pub mod make_synthsis;
+pub mod shader;
+pub mod update_triangle;

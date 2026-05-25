@@ -55,7 +55,7 @@ impl AttackClipSharder {
 #[derive(Resource)]
 pub struct AttackClipBufferHandle(pub Handle<ShaderStorageBuffer>);
 
-pub fn setup_attack_clip_buffer_buffer(
+pub fn init_attack_clip_buffer_buffer(
     mut cmds: Commands,
     mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
 ) {

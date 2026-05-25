@@ -1,31 +1,30 @@
 //test
-use bevy::{
-    camera::ScalingMode, prelude::*, render::storage::ShaderStorageBuffer, window::WindowResolution,
-};
+use bevy::prelude::*;
+use bevy::{render::storage::ShaderStorageBuffer, window::WindowResolution};
 use bevy_vector_shapes::prelude::*;
 use std::f32::consts::PI;
 
 use crate::{
     box_border::{
-        box_moving::BoxMoving,
+        // box_moving::BoxMoving,
         box_struct::{BoxType, BoxZIndex},
         boxs::rect::RectBox,
+        shader::attack_clip_sharder::{AttackClipBufferHandle, AttackClipSharder},
     },
     helpers::{
-        easing::Easing,
         helpers::spawn_vecs,
-        plugin::UTEnginePlugin,
         render_layers::{BOX_LAYER, BOX_LINE_LAYER, FPS_LAYER, INBOX_ATTACK_LAYER},
-        shader::attack_clip_sharder::{AttackClipBufferHandle, AttackClipSharder},
         spawn_camera::spawn_camera,
         time::SpawnDelay,
     },
     move_animation::moving::Animations,
+    plugin::UTEnginePlugin,
 };
 mod bone;
 mod box_border;
 mod helpers;
 mod move_animation;
+mod plugin;
 fn main() {
     App::new()
         .add_plugins(
@@ -71,7 +70,7 @@ fn test(
     //仕組み解説
     // まぁつまり、形にシェーダー貼り付けて描画する。
     let test_mesh = meshes.add(Rectangle::new(80., 80.)); //描画するためのmeshを作る。今回は四角形。
-    //この、spawn_batchは、イテレータにできるものを効率的にスポーンするためのもの。今回は、spawn_vecsという、fromとtoを作って、回数と増え幅を指定し、deltaからcomponentを返すやつ。
+                                                          //この、spawn_batchは、イテレータにできるものを効率的にスポーンするためのもの。今回は、spawn_vecsという、fromとtoを作って、回数と増え幅を指定し、deltaからcomponentを返すやつ。
     cmds.spawn_batch(spawn_vecs(0., 360. / 20., 20, |delta| {
         (
             Mesh2d(test_mesh.clone()), //同じものを使えば効率的なので、ちなみにこれはハンドルをクローンしている
@@ -97,10 +96,10 @@ fn test(
         BoxType::Union,
         BoxZIndex(1),
         Animations::new()
-            .move_rect(-100., -100., 200., 200., Easing::Linear)
+            .move_rect(-100., -100., 200., 200., EaseFunction::Linear)
             .set_duration(2.),
         Animations::new()
-            .add_angle(-2 * PI * 400., Easing::Linear)
+            .add_angle(-2. * PI * 400., EaseFunction::Linear)
             .set_delay(6.)
             .set_duration(3200.),
     ));
@@ -115,9 +114,10 @@ fn test(
             ..default()
         },
         Animations::new()
-            .move_angle(360.0_f32.to_radians(), Easing::Linear) .set_duration(2.),
+            .move_angle(360.0_f32.to_radians(), EaseFunction::Linear)
+            .set_duration(2.),
         Animations::new()
-            .add_to(Vec3::new(30., -30., 0.), Easing::SineIn)
+            .add_to(Vec3::new(30., -30., 0.), EaseFunction::SineIn)
             .set_delay(1.)
             .set_duration(1.),
     ));
@@ -138,15 +138,19 @@ fn test(
                         150. * delta.to_radians().sin(),
                         0.,
                     ),
-                    Easing::Linear,
+                    EaseFunction::Linear,
                 )
                 .set_duration(1.),
             Animations::new()
-                .add_angle_at(2. * PI * 400., Vec3::new(0., -60., 0.), Easing::Linear)
+                .add_angle_at(
+                    2. * PI * 400.,
+                    Vec3::new(0., -60., 0.),
+                    EaseFunction::Linear,
+                )
                 .set_delay(1.)
                 .set_duration(3200.),
             Animations::new()
-                .move_shape(-35., -35., 70., 70., Easing::BounceOut)
+                .move_rect(-35., -35., 70., 70., EaseFunction::BounceOut)
                 .set_delay(1.5)
                 .set_duration(1.),
             SpawnDelay(4.5),
@@ -163,11 +167,11 @@ fn test(
             },
             RectBox::new(-0., -0., 0., 0.),
             Animations::new()
-                .add_angle(360.0_f32.to_radians(), Easing::Linear)
+                .add_angle(360.0_f32.to_radians(), EaseFunction::Linear)
                 .set_duration(2.)
                 .set_delay(2.5),
             Animations::new()
-                .move_rect(-25., -100.1, 50., 200.2, Easing::BounceIn)
+                .move_rect(-25., -100.1, 50., 200.2, EaseFunction::BounceIn)
                 .set_duration(2.),
             SpawnDelay(1.),
             BoxType::Difference,
@@ -191,15 +195,19 @@ fn test(
                         130. * delta.to_radians().sin(),
                         0.,
                     ),
-                    Easing::Linear,
+                    EaseFunction::Linear,
                 )
                 .set_duration(1.),
             Animations::new()
-                .add_angle_at(-2. * PI * 400., Vec3::new(0., -60., 0.), Easing::Linear)
+                .add_angle_at(
+                    -2. * PI * 400.,
+                    Vec3::new(0., -60., 0.),
+                    EaseFunction::Linear,
+                )
                 .set_delay(1.)
                 .set_duration(3200.),
             Animations::new()
-                .move_rect(-30., -30., 60., 60., Easing::BounceOut)
+                .move_rect(-30., -30., 60., 60., EaseFunction::BounceOut)
                 .set_delay(1.5)
                 .set_duration(1.),
             SpawnDelay(4.5),
