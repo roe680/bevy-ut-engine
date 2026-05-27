@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct BoneStyleMeshHandle(pub Handle<Mesh>);
-
+/*  */
 #[derive(Debug, Clone, PartialEq, Component, Default)]
 pub enum BoneStyle {
     #[default]

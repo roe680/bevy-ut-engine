@@ -5,5 +5,4 @@ pub mod helpers;
 pub mod render_layers;
 pub mod spatial_partition;
 pub mod spawn_camera;
-pub mod theme;
 pub mod time;

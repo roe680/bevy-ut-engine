@@ -1,4 +1,4 @@
-//test
+mod scheme;
 use bevy::prelude::*;
 use bevy::{render::storage::ShaderStorageBuffer, window::WindowResolution};
 use bevy_vector_shapes::prelude::*;
@@ -70,7 +70,7 @@ fn test(
     //仕組み解説
     // まぁつまり、形にシェーダー貼り付けて描画する。
     let test_mesh = meshes.add(Rectangle::new(80., 80.)); //描画するためのmeshを作る。今回は四角形。
-                                                          //この、spawn_batchは、イテレータにできるものを効率的にスポーンするためのもの。今回は、spawn_vecsという、fromとtoを作って、回数と増え幅を指定し、deltaからcomponentを返すやつ。
+    //この、spawn_batchは、イテレータにできるものを効率的にスポーンするためのもの。今回は、spawn_vecsという、fromとtoを作って、回数と増え幅を指定し、deltaからcomponentを返すやつ。
     cmds.spawn_batch(spawn_vecs(0., 360. / 20., 20, |delta| {
         (
             Mesh2d(test_mesh.clone()), //同じものを使えば効率的なので、ちなみにこれはハンドルをクローンしている

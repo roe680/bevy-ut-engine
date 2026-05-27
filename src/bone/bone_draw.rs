@@ -7,7 +7,7 @@ use i_overlay::float::clip::FloatClip;
 use i_overlay::string::clip::ClipRule;
 
 use crate::helpers::attack::attack_type::AttackType;
-use crate::helpers::theme::attack_color_theme::AttackColorTheme;
+use crate::scheme::attack_color_scheme::AttackColorScheme;
 use crate::{
     bone::bone::{Bone, BoneLength},
     box_border::make_synthsis::BoxSynthesis,
@@ -16,7 +16,7 @@ use crate::{
 
 pub fn bone_draw(
     shapes: Res<BoxSynthesis>,
-    attack_color_theme: Res<AttackColorTheme>,
+    attack_color_scheme: Res<AttackColorScheme>,
     bones: Query<(&AttackType, &Transform, &BoneLength), With<Bone>>,
     mut painter: ShapePainter,
 ) {
@@ -42,7 +42,7 @@ pub fn bone_draw(
 
         painter.reset();
         painter.render_layers = Some(INBOX_ATTACK_LAYER);
-        painter.set_color(attack_color_theme.return_match_color(attack_type));
+        painter.set_color(attack_color_scheme.return_match_color(attack_type));
         painter.thickness = 2.0;
 
         for path in clipped_paths {

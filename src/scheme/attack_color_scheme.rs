@@ -5,13 +5,13 @@ use bevy::{
 
 use crate::helpers::attack::attack_type::AttackType;
 #[derive(Resource)]
-pub struct AttackColorTheme {
+pub struct AttackColorScheme {
     normal: Color,
     must_move: Color,
     must_not_move: Color,
 }
 
-impl Default for AttackColorTheme {
+impl Default for AttackColorScheme {
     fn default() -> Self {
         Self {
             normal: WHITE.into(),
@@ -21,7 +21,7 @@ impl Default for AttackColorTheme {
     }
 }
 
-impl AttackColorTheme {
+impl AttackColorScheme {
     pub fn return_match_color(&self, attack_type: &AttackType) -> Color {
         match attack_type {
             AttackType::Normal => self.normal,
