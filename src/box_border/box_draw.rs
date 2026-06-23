@@ -1,6 +1,7 @@
 use crate::{
     box_border::{
         box_struct::{BoxType, BoxZIndex, UTBox},
+        color_scheme::box_color_scheme::BoxColorScheme,
         make_synthsis::BoxSynthesis,
         update_triangle::BoxTriangle,
     },
@@ -18,11 +19,12 @@ pub fn box_draw(
     _b: Query<(&UTBox, &GlobalTransform, &BoxType, &BoxZIndex), Without<Visibility>>,
     triangles: Res<BoxTriangle>,
     shapes: Res<BoxSynthesis>,
+    color_scheme: Res<BoxColorScheme>,
 ) {
     // 三角形塗り描画
     painter.reset();
     painter.render_layers = Some(BOX_LAYER);
-    painter.set_color(BLACK);
+    painter.set_color(color_scheme.fill_color);
 
     for tri in triangles.0.iter() {
         let v_a = Vec2::new(tri[0][0], tri[0][1]);
@@ -34,7 +36,7 @@ pub fn box_draw(
     // アウトライン描画（既存仕様維持）
     painter.reset();
     painter.render_layers = Some(BOX_LINE_LAYER);
-    painter.set_color(Color::WHITE);
+    painter.set_color(color_scheme.line_color);
     painter.thickness = 2.0;
 
     for shape_group in &**shapes {

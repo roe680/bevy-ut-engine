@@ -1,4 +1,4 @@
-mod scheme;
+mod color_scheme;
 use bevy::prelude::*;
 use bevy::{render::storage::ShaderStorageBuffer, window::WindowResolution};
 use bevy_vector_shapes::prelude::*;

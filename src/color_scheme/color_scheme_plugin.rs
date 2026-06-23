@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::scheme::attack_color_scheme::AttackColorScheme;
+use crate::color_scheme::attack_color_scheme::AttackColorScheme;
 
 pub struct UTSchemePlugin;
 

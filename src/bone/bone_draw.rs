@@ -6,8 +6,8 @@ use i_overlay::core::fill_rule::FillRule;
 use i_overlay::float::clip::FloatClip;
 use i_overlay::string::clip::ClipRule;
 
+use crate::color_scheme::attack_color_scheme::AttackColorScheme;
 use crate::helpers::attack::attack_type::AttackType;
-use crate::scheme::attack_color_scheme::AttackColorScheme;
 use crate::{
     bone::bone::{Bone, BoneLength},
     box_border::make_synthsis::BoxSynthesis,
