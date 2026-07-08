@@ -2,17 +2,17 @@ use bevy::prelude::*;
 
 use crate::{
     helpers::time::LifeTimer,
-    move_animation::moving::{create_default, Animations},
+    move_animation::moving::{Animations, create_default},
 };
 
-pub enum Angle {
+pub enum AngleAnim {
     MoveAngle(EaseFunction, Option<Quat>, f32, Quat),
     AddAngle(EaseFunction, f32, Quat),
 }
 
-impl Animations<Angle> {
+impl Animations<AngleAnim> {
     pub fn move_angle(mut self, angle: f32, ease: EaseFunction) -> Self {
-        self.0.push(create_default(Angle::MoveAngle(
+        self.0.push(create_default(AngleAnim::MoveAngle(
             ease,
             None,
             angle,
@@ -21,13 +21,16 @@ impl Animations<Angle> {
         self
     }
     pub fn add_angle(mut self, angle: f32, ease: EaseFunction) -> Self {
-        self.0
-            .push(create_default(Angle::AddAngle(ease, angle, Quat::IDENTITY)));
+        self.0.push(create_default(AngleAnim::AddAngle(
+            ease,
+            angle,
+            Quat::IDENTITY,
+        )));
         self
     }
 }
 
-pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<Angle>, &LifeTimer)>) {
+pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<AngleAnim>, &LifeTimer)>) {
     for (mut transform, mut animations, timer) in query.iter_mut() {
         let mut remove_indices: Vec<usize> = vec![];
         for (i, (moving_type, delay, duration, start_fraction, end_fraction)) in
@@ -38,7 +41,7 @@ pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<Angle>,
                     * (*end_fraction - *start_fraction)
                     + *start_fraction;
                 match moving_type {
-                    Angle::MoveAngle(ease, start, to, memory) => {
+                    AngleAnim::MoveAngle(ease, start, to, memory) => {
                         if start.is_none() {
                             *start = Some(transform.rotation);
                         }
@@ -59,7 +62,7 @@ pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<Angle>,
                             *memory = target_rotation;
                         }
                     }
-                    Angle::AddAngle(ease, angle, memory) => {
+                    AngleAnim::AddAngle(ease, angle, memory) => {
                         let target_rotation =
                             Quat::from_rotation_z(*angle * ease.sample_clamped(t));
                         let rotation_delta = memory.inverse() * target_rotation;

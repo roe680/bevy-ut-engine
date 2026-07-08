@@ -1,21 +1,27 @@
 mod color_scheme;
 use bevy::prelude::*;
-use bevy::{render::storage::ShaderStorageBuffer, window::WindowResolution};
+use bevy::render::storage::ShaderBuffer;
+use bevy::window::WindowResolution;
 use bevy_vector_shapes::prelude::*;
 use std::f32::consts::PI;
 
 use crate::{
+    bone::{
+        animations::bone_length::BoneLengthAnim,
+        bone::{Bone, BoneLength},
+    },
     box_border::{
         // box_moving::BoxMoving,
         box_struct::{BoxType, BoxZIndex},
         boxs::rect::RectBox,
-        shader::attack_clip_sharder::{AttackClipBufferHandle, AttackClipSharder},
+        shader::attack_clip_sharder::AttackClipSharder,
     },
     helpers::{
+        attack::attack_type::AttackType,
         helpers::spawn_vecs,
         render_layers::{BOX_LAYER, BOX_LINE_LAYER, FPS_LAYER, INBOX_ATTACK_LAYER},
         spawn_camera::spawn_camera,
-        time::SpawnDelay,
+        time::{LiveDuration, SpawnDelay},
     },
     move_animation::moving::Animations,
     plugin::UTEnginePlugin,
@@ -60,8 +66,7 @@ fn test(
     mut meshes: ResMut<Assets<Mesh>>,
     mut attack_shader: ResMut<Assets<AttackClipSharder>>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
-    mut buffers: ResMut<Assets<ShaderStorageBuffer>>, //GPUに送られる、データたち(配列系は特にここに入れられる(ちなみに全部詰まってるから鍵(handle)が必要))
-    triangle_buffer: Res<AttackClipBufferHandle>,     //↑の鍵,triangleを元に、クリップするので
+    mut buffers: ResMut<Assets<ShaderBuffer>>, //GPUに送られる、データたち(配列系は特にここに入れられる(ちなみに全部詰まってるから鍵(handle)が必要))
 ) {
     let test2 = color_materials.add(ColorMaterial {
         color: Color::WHITE,
@@ -70,26 +75,25 @@ fn test(
     //仕組み解説
     // まぁつまり、形にシェーダー貼り付けて描画する。
     let test_mesh = meshes.add(Rectangle::new(80., 80.)); //描画するためのmeshを作る。今回は四角形。
-    //この、spawn_batchは、イテレータにできるものを効率的にスポーンするためのもの。今回は、spawn_vecsという、fromとtoを作って、回数と増え幅を指定し、deltaからcomponentを返すやつ。
-    cmds.spawn_batch(spawn_vecs(0., 360. / 20., 20, |delta| {
-        (
-            Mesh2d(test_mesh.clone()), //同じものを使えば効率的なので、ちなみにこれはハンドルをクローンしている
-            INBOX_ATTACK_LAYER,        //枠の内側に収まるように描画するためのレイヤー
-            MeshMaterial2d(attack_shader.add(AttackClipSharder::new(
-                assets.load("test4.png"), //シェーダーに送る画像、Meshにこの画像が貼り付けられる。
-                &mut buffers,             //このフレームワークで共有されるbufferたち
-                triangle_buffer.0.clone(), //鍵(Handle)
-            ))),
-            Transform {
-                translation: Vec3::new(
-                    delta.to_radians().sin() * 100.,
-                    delta.to_radians().cos() * 100.,
-                    delta,
-                ),
-                ..default()
-            },
-        )
-    }));
+    // この、spawn_batchは、イテレータにできるものを効率的にスポーンするためのもの。今回は、spawn_vecsという、fromとtoを作って、回数と増え幅を指定し、deltaからcomponentを返すやつ。
+    // cmds.spawn_batch(spawn_vecs(0., 360. / 360., 360, |delta| {
+    //     (
+    //         Mesh2d(test_mesh.clone()), //同じものを使えば効率的なので、ちなみにこれはハンドルをクローンしている
+    //         INBOX_ATTACK_LAYER,        //枠の内側に収まるように描画するためのレイヤー
+    //         MeshMaterial2d(attack_shader.add(AttackClipSharder::new(
+    //             assets.load("test4.png"), //シェーダーに送る画像、Meshにこの画像が貼り付けられる。
+    //             &mut buffers,             //インデックスバッファ作成用
+    //         ))),
+    //         Transform {
+    //             translation: Vec3::new(
+    //                 delta.to_radians().sin() * 100.,
+    //                 delta.to_radians().cos() * 100.,
+    //                 delta,
+    //             ),
+    //             ..default()
+    //         },
+    //     )
+    // }));
     //BoxZIndexは順番です。小さい方からUnionやDifferenceされます
     cmds.spawn((
         RectBox::new(-50., -50., 100., 100.).add_translation(40., 30.),
@@ -211,6 +215,139 @@ fn test(
                 .set_delay(1.5)
                 .set_duration(1.),
             SpawnDelay(4.5),
+        )
+    }));
+
+    // === 負荷テスト: 放射状波バースト (360本, LiveDuration付き) ===
+    // 全ボーンが中心から波状に放射、古いものは自動消滅
+    cmds.spawn_batch(spawn_vecs(0., 1., 360, |delta| {
+        let rad = (delta * 360. / 360.).to_radians();
+        let wave = delta / 360. * 2.5;
+        (
+            Bone,
+            AttackType::Normal,
+            Transform {
+                translation: Vec3::ZERO,
+                rotation: Quat::from_rotation_z(rad),
+                ..default()
+            },
+            BoneLength(3.0),
+            LiveDuration(9.0),
+            Animations::<BoneLengthAnim>::new()
+                .move_len(90.0, EaseFunction::SineOut)
+                .set_delay(wave)
+                .set_duration(2.0)
+                .add_len(-40.0, EaseFunction::SineInOut)
+                .set_delay(wave + 2.5)
+                .set_duration(1.5)
+                .add_len(30.0, EaseFunction::SineInOut)
+                .set_delay(wave + 4.5)
+                .set_duration(1.0),
+            Animations::new()
+                .add_to(Vec3::new(rad.cos() * 200., rad.sin() * 200., 0.), EaseFunction::SineOut)
+                .set_delay(wave)
+                .set_duration(2.0),
+            Animations::new()
+                .add_angle(8. * PI, EaseFunction::Linear)
+                .set_delay(wave)
+                .set_duration(6.0),
+        )
+    }));
+
+    // === 負荷テスト: 多重リング公転 (5重, 計180本, 段階出現) ===
+    for ring in 0..5 {
+        let radius = 60. + ring as f32 * 35.;
+        let count = 12 * (ring + 1);
+        let ring_delay = ring as f32 * 1.5;
+        cmds.spawn_batch(spawn_vecs(0., 360. / count as f32, count, |delta| {
+            let rad = delta.to_radians();
+            let inner_delay = delta / count as f32 * 0.5;
+            (
+                Bone,
+                AttackType::MustMove,
+                Transform {
+                    translation: Vec3::new(radius * rad.cos(), radius * rad.sin(), 0.),
+                    rotation: Quat::from_rotation_z(rad),
+                    ..default()
+                },
+                BoneLength(5.0),
+                LiveDuration(12.0),
+                Animations::<BoneLengthAnim>::new()
+                    .move_len(35., EaseFunction::SineInOut)
+                    .set_delay(ring_delay + inner_delay)
+                    .set_duration(1.0 + ring as f32 * 0.2)
+                    .add_len(-15., EaseFunction::SineInOut)
+                    .set_delay(ring_delay + inner_delay + 1.0)
+                    .set_duration(1.0),
+                Animations::new()
+                    .add_angle_at(
+                        (3. - ring as f32) * 2. * PI,
+                        Vec3::ZERO,
+                        EaseFunction::Linear,
+                    )
+                    .set_delay(ring_delay + inner_delay)
+                    .set_duration(4. + ring as f32 * 0.5),
+                Animations::new()
+                    .add_angle(4. * PI, EaseFunction::Linear)
+                    .set_delay(ring_delay + inner_delay)
+                    .set_duration(3.0),
+            )
+        }));
+    }
+
+    // === 負荷テスト: スパイラル波 (200本, 連続出現) ===
+    cmds.spawn_batch(spawn_vecs(0., 1., 200, |delta| {
+        let t = delta / 200.;
+        let angle = t * 360. * 3.;
+        let rad = angle.to_radians();
+        let r = 30. + t * 140.;
+        let stagger = delta / 200. * 3.0;
+        (
+            Bone,
+            AttackType::MustNotMove,
+            Transform {
+                translation: Vec3::new(r * rad.cos(), r * rad.sin(), 0.),
+                rotation: Quat::from_rotation_z(rad),
+                ..default()
+            },
+            BoneLength(5.0),
+            LiveDuration(8.0),
+            Animations::<BoneLengthAnim>::new()
+                .move_len(20. + t * 30., EaseFunction::SineOut)
+                .set_delay(stagger)
+                .set_duration(2.0)
+                .add_len(-15., EaseFunction::SineInOut)
+                .set_delay(stagger + 2.5)
+                .set_duration(1.5),
+            Animations::new()
+                .add_angle(6. * PI, EaseFunction::Linear)
+                .set_delay(stagger)
+                .set_duration(4.0),
+        )
+    }));
+
+    // === 負荷テスト: 高速振動リング (20本, 短寿命) ===
+    cmds.spawn_batch(spawn_vecs(0., 360. / 20., 20, |delta| {
+        let rad = delta.to_radians();
+        (
+            Bone,
+            AttackType::Normal,
+            Transform {
+                translation: Vec3::new(180. * rad.cos(), 180. * rad.sin(), 0.),
+                rotation: Quat::from_rotation_z(rad),
+                ..default()
+            },
+            BoneLength(5.0),
+            LiveDuration(4.0),
+            Animations::<BoneLengthAnim>::new()
+                .move_len(80., EaseFunction::SineInOut)
+                .set_duration(0.3)
+                .move_len(5., EaseFunction::SineInOut)
+                .set_duration(0.3)
+                .move_len(80., EaseFunction::SineInOut)
+                .set_duration(0.3)
+                .move_len(5., EaseFunction::SineInOut)
+                .set_duration(0.3),
         )
     }));
 }

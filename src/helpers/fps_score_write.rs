@@ -14,6 +14,7 @@ pub struct FpsComponent;
 
 pub fn setup_fps(mut cmds: Commands, fonts: ResMut<AssetServer>) {
     let font: Handle<Font> = fonts.load("OpenSans-Regular.ttf");
+    let font_source = FontSource::Handle(font);
     cmds.spawn((
         FpsComponent,
         Text2d("Not up date".to_string()),
@@ -22,8 +23,8 @@ pub fn setup_fps(mut cmds: Commands, fonts: ResMut<AssetServer>) {
             ..default()
         },
         TextFont {
-            font: font,
-            font_size: 20.,
+            font: font_source,
+            font_size: FontSize::Px(20.),
             ..default()
         },
         TextColor(WHITE.into()),

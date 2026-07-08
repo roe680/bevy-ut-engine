@@ -1,4 +1,4 @@
-use bevy::ecs::{component::Component, event::Trigger, lifecycle::Add, observer::On};
+use bevy::ecs::{component::Component, lifecycle::Add, observer::On};
 
 use crate::bone::bone::Bone;
 use bevy::prelude::*;

@@ -2,17 +2,17 @@ use bevy::prelude::*;
 
 use crate::{
     helpers::time::LifeTimer,
-    move_animation::moving::{create_default, Animations},
+    move_animation::moving::{Animations, create_default},
 };
 
-pub enum AngleAt {
+pub enum AngleAtAnim {
     MoveAngleAt(EaseFunction, Option<Quat>, f32, Quat, Vec3, Option<Vec3>),
     AddAngleAt(EaseFunction, f32, Quat, Vec3, Option<Vec3>),
 }
 
-impl Animations<AngleAt> {
+impl Animations<AngleAtAnim> {
     pub fn move_angle_at(mut self, angle: f32, at: Vec3, ease: EaseFunction) -> Self {
-        self.0.push(create_default(AngleAt::MoveAngleAt(
+        self.0.push(create_default(AngleAtAnim::MoveAngleAt(
             ease,
             None,
             angle,
@@ -23,7 +23,7 @@ impl Animations<AngleAt> {
         self
     }
     pub fn add_angle_at(mut self, angle: f32, at: Vec3, ease: EaseFunction) -> Self {
-        self.0.push(create_default(AngleAt::AddAngleAt(
+        self.0.push(create_default(AngleAtAnim::AddAngleAt(
             ease,
             angle,
             Quat::IDENTITY,
@@ -35,7 +35,7 @@ impl Animations<AngleAt> {
 }
 
 pub fn animation_angle_at(
-    mut query: Query<(&mut Transform, &mut Animations<AngleAt>, &LifeTimer)>,
+    mut query: Query<(&mut Transform, &mut Animations<AngleAtAnim>, &LifeTimer)>,
 ) {
     for (mut transform, mut animations, timer) in query.iter_mut() {
         let mut remove_indices: Vec<usize> = vec![];
@@ -47,7 +47,7 @@ pub fn animation_angle_at(
                     * (*end_fraction - *start_fraction)
                     + *start_fraction;
                 match moving_type {
-                    AngleAt::MoveAngleAt(ease, start, to, angle_memory, at, at_memory) => {
+                    AngleAtAnim::MoveAngleAt(ease, start, to, angle_memory, at, at_memory) => {
                         if start.is_none() {
                             *start = Some(transform.rotation);
                         }
@@ -79,7 +79,7 @@ pub fn animation_angle_at(
                             *prev_pos = new_rotated;
                         }
                     }
-                    AngleAt::AddAngleAt(ease, angle, angle_memory, at, at_memory) => {
+                    AngleAtAnim::AddAngleAt(ease, angle, angle_memory, at, at_memory) => {
                         // 初回のみ at_memory を初期化
                         if at_memory.is_none() {
                             *at_memory = Some(transform.translation - *at);

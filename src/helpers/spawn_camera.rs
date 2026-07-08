@@ -1,7 +1,7 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera::ScalingMode;
 use bevy::prelude::*;
-use bevy::render::view::Hdr;
+use bevy::camera::Hdr;
 pub fn spawn_camera(
     order: isize,
     layers: RenderLayers,

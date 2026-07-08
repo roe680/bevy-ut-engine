@@ -1,31 +1,42 @@
 use crate::{
     box_border::{
         make_synthsis::BoxSynthesis,
-        shader::attack_clip_sharder::{AttackClipBufferHandle, AttackClipSharder},
+        shader::attack_clip_sharder::AttackClipSharder,
     },
     helpers::spatial_partition::{
         calculate_global_bounds, collect_triangle_indices_for_points, OptimizedQuadTree,
     },
 };
-use bevy::{prelude::*, render::storage::ShaderStorageBuffer};
+use bevy::{prelude::*, render::storage::ShaderBuffer};
+use bevy::render::extract_resource::ExtractResource;
 use bevy_mesh::VertexAttributeValues;
 use i_triangle::float::triangulatable::Triangulatable;
 
+/// GPU とのやり取りに適した三角形構造体（bytemuck で安全に転送可能）
+#[derive(Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
+#[repr(C)]
+pub struct GpuTriangle {
+    pub p0: Vec2,
+    pub p1: Vec2,
+    pub p2: Vec2,
+}
+
 /// CPU 側に保持する三角形キャッシュ。
 /// 描画側 (`box_drawer`) はこの Resource を参照して描画する。
-#[derive(Resource, Debug, Clone, Default)]
+/// RenderApp の ExtractResourcePlugin によりレンダーワールドにコピーされる。
+#[derive(Resource, Debug, Clone, Default, ExtractResource)]
 pub struct BoxTriangle(pub Vec<[[f32; 2]; 3]>);
 
 /// 三角形データを生成し、
 /// - `BoxTriangle` (CPU キャッシュ) を更新
-/// - `AttackClipBufferHandle` が指す三角形バッファ (GPU) を更新
 /// - 各 `AttackClipSharder` のインデックスバッファを更新
+///
+/// 三角形バッファ (GPU) の更新は RenderApp の Prepare システムが行う。
 pub fn update_triangle(
     shapes: Res<BoxSynthesis>,
     mut box_triangle: ResMut<BoxTriangle>,
-    triangle_buffer: Res<AttackClipBufferHandle>,
-    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
     mut materials: ResMut<Assets<AttackClipSharder>>,
+    mut buffers: ResMut<Assets<ShaderBuffer>>,
     meshes: Res<Assets<Mesh>>,
     clip_entitys: Query<(
         &Mesh2d,
@@ -37,13 +48,9 @@ pub fn update_triangle(
     if shapes.is_empty() {
         box_triangle.0.clear();
 
-        if let Some(buf) = buffers.get_mut(&triangle_buffer.0) {
-            buf.set_data(Vec::<[[f32; 2]; 3]>::new());
-        }
-
         for (_, material_handle, _) in clip_entitys.iter() {
-            if let Some(material) = materials.get_mut(&material_handle.0) {
-                if let Some(idx_buf) = buffers.get_mut(material.get_indices_handle()) {
+            if let Some(mut material) = materials.get_mut(&material_handle.0) {
+                if let Some(mut idx_buf) = buffers.get_mut(material.get_indices_handle()) {
                     idx_buf.set_data(Vec::<u32>::new());
                 }
                 material.set_len(0);
@@ -57,13 +64,9 @@ pub fn update_triangle(
     if triangulation.indices.is_empty() {
         box_triangle.0.clear();
 
-        if let Some(buf) = buffers.get_mut(&triangle_buffer.0) {
-            buf.set_data(Vec::<[[f32; 2]; 3]>::new());
-        }
-
         for (_, material_handle, _) in clip_entitys.iter() {
-            if let Some(material) = materials.get_mut(&material_handle.0) {
-                if let Some(idx_buf) = buffers.get_mut(material.get_indices_handle()) {
+            if let Some(mut material) = materials.get_mut(&material_handle.0) {
+                if let Some(mut idx_buf) = buffers.get_mut(material.get_indices_handle()) {
                     idx_buf.set_data(Vec::<u32>::new());
                 }
                 material.set_len(0);
@@ -83,13 +86,8 @@ pub fn update_triangle(
         triangles.push([[a[0], a[1]], [b[0], b[1]], [c[0], c[1]]]);
     }
 
-    // CPU キャッシュ更新（描画側が参照）
-    box_triangle.0 = triangles.clone();
-
-    // GPU 三角形バッファ更新（クリップ用）
-    if let Some(buf) = buffers.get_mut(&triangle_buffer.0) {
-        buf.set_data(triangles.clone());
-    }
+    // CPU キャッシュ更新（描画側が参照 + RenderApp 抽出用）
+    box_triangle.0 = triangles;
 
     // クリップ対象がなければここまで
     if clip_entitys.is_empty() {
@@ -97,8 +95,8 @@ pub fn update_triangle(
     }
 
     // 空間分割で候補三角形を高速抽出
-    let global_bounds = calculate_global_bounds(&triangles);
-    let quadtree = OptimizedQuadTree::new(global_bounds, &triangles);
+    let global_bounds = calculate_global_bounds(&box_triangle.0);
+    let quadtree = OptimizedQuadTree::new(global_bounds, &box_triangle.0);
 
     let mut world_pts: Vec<[f32; 3]> = Vec::new();
 
@@ -124,8 +122,8 @@ pub fn update_triangle(
         let indices_usize = collect_triangle_indices_for_points(&world_pts, &quadtree);
         let indices_u32: Vec<u32> = indices_usize.into_iter().map(|i| i as u32).collect();
 
-        if let Some(material) = materials.get_mut(&material_handle.0) {
-            if let Some(idx_buf) = buffers.get_mut(material.get_indices_handle()) {
+        if let Some(mut material) = materials.get_mut(&material_handle.0) {
+            if let Some(mut idx_buf) = buffers.get_mut(material.get_indices_handle()) {
                 idx_buf.set_data(indices_u32.clone());
             }
             material.set_len(indices_u32.len() as u32);

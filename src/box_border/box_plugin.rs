@@ -1,14 +1,16 @@
 use bevy::{
-    app::{App, Plugin, PreStartup, PreUpdate, Update},
+    app::{App, Plugin, PreUpdate, Update},
     ecs::schedule::IntoScheduleConfigs,
+    sprite_render::Material2dPlugin,
 };
 
 use crate::box_border::{
     animations::shape::animation_shape,
     box_draw::box_draw,
     color_scheme::box_color_scheme::BoxColorScheme,
+    gpu_triangle_plugin::GpuTrianglePlugin,
     make_synthsis::{BoxSynthesis, make_synthsis},
-    shader::attack_clip_sharder::{AttackClipSharder, init_attack_clip_buffer_buffer},
+    shader::attack_clip_sharder::AttackClipSharder,
     update_triangle::{BoxTriangle, update_triangle},
 };
 
@@ -20,13 +22,13 @@ impl Plugin for BoxPlugin {
             .init_resource::<BoxTriangle>()
             // データ更新系は PreUpdate で先に実行
             .add_systems(PreUpdate, make_synthsis)
-            .add_systems(PreStartup, init_attack_clip_buffer_buffer)
-            .add_plugins(bevy::sprite_render::Material2dPlugin::<AttackClipSharder>::default())
             .add_systems(PreUpdate, update_triangle.after(make_synthsis))
+            .add_plugins(Material2dPlugin::<AttackClipSharder>::default())
+            .add_plugins(GpuTrianglePlugin)
             // 描画は Update
             .add_systems(Update, animation_shape)
             .add_systems(Update, box_draw)
-            //Box color scheme
+            // Box color scheme
             .init_resource::<BoxColorScheme>();
     }
 }

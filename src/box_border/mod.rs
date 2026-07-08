@@ -5,5 +5,6 @@ pub mod box_struct;
 pub mod boxs;
 pub mod color_scheme;
 pub mod make_synthsis;
+pub mod gpu_triangle_plugin;
 pub mod shader;
 pub mod update_triangle;

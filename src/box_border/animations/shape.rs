@@ -3,10 +3,10 @@ use bevy::prelude::*;
 use crate::{
     box_border::box_struct::UTBox,
     helpers::time::LifeTimer,
-    move_animation::moving::{create_default, Animations},
+    move_animation::moving::{Animations, create_default},
 };
 
-pub enum Shape {
+pub enum ShapeAnim {
     MoveToShape(
         EaseFunction,
         Option<Vec<[f32; 2]>>,
@@ -19,9 +19,9 @@ pub enum Shape {
     AddShapeRotationAt(EaseFunction, f32, f32, [f32; 2]),
 }
 
-impl Animations<Shape> {
+impl Animations<ShapeAnim> {
     pub fn move_any_shape(mut self, shape: Vec<[f32; 2]>, ease: EaseFunction) -> Self {
-        self.0.push(create_default(Shape::MoveToShape(
+        self.0.push(create_default(ShapeAnim::MoveToShape(
             ease,
             None,
             shape,
@@ -31,11 +31,11 @@ impl Animations<Shape> {
     }
     pub fn add_any_shape(mut self, shape: Vec<[f32; 2]>, ease: EaseFunction) -> Self {
         self.0
-            .push(create_default(Shape::AddToShape(ease, shape, vec![])));
+            .push(create_default(ShapeAnim::AddToShape(ease, shape, vec![])));
         self
     }
     pub fn add_shape_translation(mut self, to: [f32; 2], ease: EaseFunction) -> Self {
-        self.0.push(create_default(Shape::AddShapeTranslation(
+        self.0.push(create_default(ShapeAnim::AddShapeTranslation(
             ease,
             to,
             [0.0, 0.0],
@@ -43,19 +43,20 @@ impl Animations<Shape> {
         self
     }
     pub fn add_shape_rotation(mut self, angle: f32, ease: EaseFunction) -> Self {
-        self.0
-            .push(create_default(Shape::AddRotationAngle(ease, angle, 0.0)));
+        self.0.push(create_default(ShapeAnim::AddRotationAngle(
+            ease, angle, 0.0,
+        )));
         self
     }
     pub fn add_shape_rotation_at(mut self, angle: f32, at: [f32; 2], ease: EaseFunction) -> Self {
-        self.0.push(create_default(Shape::AddShapeRotationAt(
+        self.0.push(create_default(ShapeAnim::AddShapeRotationAt(
             ease, angle, 0.0, at,
         )));
         self
     }
 }
 
-pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<Shape>, &LifeTimer)>) {
+pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<ShapeAnim>, &LifeTimer)>) {
     for (mut utbox, mut animations, timer) in query.iter_mut() {
         let mut remove_indices: Vec<usize> = vec![];
         for (i, (moving_type, delay, duration, start_fraction, end_fraction)) in
@@ -66,7 +67,7 @@ pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<Shape>, &Li
                     * (*end_fraction - *start_fraction)
                     + *start_fraction;
                 match moving_type {
-                    Shape::MoveToShape(ease, start, to, memory) => {
+                    ShapeAnim::MoveToShape(ease, start, to, memory) => {
                         if start.is_none() {
                             *start = Some(utbox.0.clone());
                         }
@@ -91,7 +92,7 @@ pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<Shape>, &Li
                         }
                         *memory = new_memory;
                     }
-                    Shape::AddToShape(ease, to, memory) => {
+                    ShapeAnim::AddToShape(ease, to, memory) => {
                         let mut new_memory = Vec::new();
                         if memory.len() != to.len() {
                             *memory = vec![[0.0, 0.0]; to.len()];
@@ -105,7 +106,7 @@ pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<Shape>, &Li
                         }
                         *memory = new_memory;
                     }
-                    Shape::AddShapeTranslation(ease, to, memory) => {
+                    ShapeAnim::AddShapeTranslation(ease, to, memory) => {
                         let lerp_x = to[0] * ease.sample_clamped(t);
                         let lerp_y = to[1] * ease.sample_clamped(t);
                         utbox.iter_mut().for_each(|pos| {
@@ -113,7 +114,7 @@ pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<Shape>, &Li
                         });
                         *memory = [lerp_x, lerp_y];
                     }
-                    Shape::AddRotationAngle(ease, angle, memory) => {
+                    ShapeAnim::AddRotationAngle(ease, angle, memory) => {
                         let lerp_angle = *angle * ease.sample_clamped(t);
                         let sin = (lerp_angle - *memory).sin();
                         let cos = (lerp_angle - *memory).cos();
@@ -126,7 +127,7 @@ pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<Shape>, &Li
                         });
                         *memory = lerp_angle;
                     }
-                    Shape::AddShapeRotationAt(ease, angle, memory, at) => {
+                    ShapeAnim::AddShapeRotationAt(ease, angle, memory, at) => {
                         let lerp_angle = *angle * ease.sample_clamped(t);
                         let sin = (lerp_angle - *memory).sin();
                         let cos = (lerp_angle - *memory).cos();

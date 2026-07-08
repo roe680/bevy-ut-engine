@@ -2,28 +2,32 @@ use bevy::prelude::*;
 
 use crate::{
     helpers::time::LifeTimer,
-    move_animation::moving::{create_default, Animations},
+    move_animation::moving::{Animations, create_default},
 };
 
-pub enum Size {
+pub enum SizeAnim {
     MoveSize(EaseFunction, Option<Vec3>, Vec3, Vec3),
     AddSize(EaseFunction, Vec3, Vec3),
 }
 
-impl Animations<Size> {
+impl Animations<SizeAnim> {
     pub fn move_size(mut self, size: Vec3, ease: EaseFunction) -> Self {
-        self.0
-            .push(create_default(Size::MoveSize(ease, None, size, Vec3::ZERO)));
+        self.0.push(create_default(SizeAnim::MoveSize(
+            ease,
+            None,
+            size,
+            Vec3::ZERO,
+        )));
         self
     }
     pub fn add_size(mut self, size: Vec3, ease: EaseFunction) -> Self {
         self.0
-            .push(create_default(Size::AddSize(ease, size, Vec3::ZERO)));
+            .push(create_default(SizeAnim::AddSize(ease, size, Vec3::ZERO)));
         self
     }
 }
 
-pub fn animation_size(mut query: Query<(&mut Transform, &mut Animations<Size>, &LifeTimer)>) {
+pub fn animation_size(mut query: Query<(&mut Transform, &mut Animations<SizeAnim>, &LifeTimer)>) {
     for (mut transform, mut animations, timer) in query.iter_mut() {
         let mut remove_indices: Vec<usize> = vec![];
         for (i, (moving_type, delay, duration, start_fraction, end_fraction)) in
@@ -34,7 +38,7 @@ pub fn animation_size(mut query: Query<(&mut Transform, &mut Animations<Size>, &
                     * (*end_fraction - *start_fraction)
                     + *start_fraction;
                 match moving_type {
-                    Size::MoveSize(ease, start, to, memory) => {
+                    SizeAnim::MoveSize(ease, start, to, memory) => {
                         if start.is_none() {
                             *start = Some(transform.scale);
                         }
@@ -44,7 +48,7 @@ pub fn animation_size(mut query: Query<(&mut Transform, &mut Animations<Size>, &
                             *memory = lerp;
                         }
                     }
-                    Size::AddSize(ease, size, memory) => {
+                    SizeAnim::AddSize(ease, size, memory) => {
                         let lerp = *size * ease.sample_clamped(t);
                         transform.scale += lerp - *memory;
                         *memory = lerp;
