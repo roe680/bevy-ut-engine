@@ -2,6 +2,7 @@ mod color_scheme;
 use bevy::prelude::*;
 use bevy::render::storage::ShaderBuffer;
 use bevy::window::WindowResolution;
+use bevy_framepace::FramepacePlugin;
 use bevy_vector_shapes::prelude::*;
 use std::f32::consts::PI;
 
@@ -68,7 +69,7 @@ fn test(
     mut attack_shader: ResMut<Assets<AttackClipSharder>>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut buffers: ResMut<Assets<ShaderBuffer>>, //GPUに送られる、データたち(配列系は特にここに入れられる(ちなみに全部詰まってるから鍵(handle)が必要))
-    _triangles_handle: Res<TrianglesBufferHandle>,
+    triangles_handle: Res<TrianglesBufferHandle>,
 ) {
     let test2 = color_materials.add(ColorMaterial {
         color: Color::WHITE,
@@ -78,24 +79,25 @@ fn test(
     // まぁつまり、形にシェーダー貼り付けて描画する。
     let test_mesh = meshes.add(Rectangle::new(80., 80.)); //描画するためのmeshを作る。今回は四角形。
     // この、spawn_batchは、イテレータにできるものを効率的にスポーンするためのもの。今回は、spawn_vecsという、fromとtoを作って、回数と増え幅を指定し、deltaからcomponentを返すやつ。
-    // cmds.spawn_batch(spawn_vecs(0., 360. / 360., 360, |delta| {
-    //     (
-    //         Mesh2d(test_mesh.clone()), //同じものを使えば効率的なので、ちなみにこれはハンドルをクローンしている
-    //         INBOX_ATTACK_LAYER,        //枠の内側に収まるように描画するためのレイヤー
-    //         MeshMaterial2d(attack_shader.add(AttackClipSharder::new(
-    //             assets.load("test4.png"), //シェーダーに送る画像、Meshにこの画像が貼り付けられる。
-    //             &mut buffers,             //インデックスバッファ作成用
-    //         ))),
-    //         Transform {
-    //             translation: Vec3::new(
-    //                 delta.to_radians().sin() * 100.,
-    //                 delta.to_radians().cos() * 100.,
-    //                 delta,
-    //             ),
-    //             ..default()
-    //         },
-    //     )
-    // }));
+    cmds.spawn_batch(spawn_vecs(0., 360. / 360., 360, |delta| {
+        (
+            Mesh2d(test_mesh.clone()), //同じものを使えば効率的なので、ちなみにこれはハンドルをクローンしている
+            INBOX_ATTACK_LAYER,        //枠の内側に収まるように描画するためのレイヤー
+            MeshMaterial2d(attack_shader.add(AttackClipSharder::new(
+                assets.load("test4.png"), //シェーダーに送る画像、Meshにこの画像が貼り付けられる。
+                &mut buffers,             //インデックスバッファ作成用
+                triangles_handle.0.clone(), //共有三角形バッファのハンドル
+            ))),
+            Transform {
+                translation: Vec3::new(
+                    delta.to_radians().sin() * 100.,
+                    delta.to_radians().cos() * 100.,
+                    delta,
+                ),
+                ..default()
+            },
+        )
+    }));
     //BoxZIndexは順番です。小さい方からUnionやDifferenceされます
     cmds.spawn((
         RectBox::new(-50., -50., 100., 100.).add_translation(40., 30.),
@@ -246,7 +248,10 @@ fn test(
                 .set_delay(wave + 4.5)
                 .set_duration(1.0),
             Animations::new()
-                .add_to(Vec3::new(rad.cos() * 200., rad.sin() * 200., 0.), EaseFunction::SineOut)
+                .add_to(
+                    Vec3::new(rad.cos() * 200., rad.sin() * 200., 0.),
+                    EaseFunction::SineOut,
+                )
                 .set_delay(wave)
                 .set_duration(2.0),
             Animations::new()
