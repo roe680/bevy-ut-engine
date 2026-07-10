@@ -15,6 +15,7 @@ use crate::{
         box_struct::{BoxType, BoxZIndex},
         boxs::rect::RectBox,
         shader::attack_clip_sharder::AttackClipSharder,
+        update_triangle::TrianglesBufferHandle,
     },
     helpers::{
         attack::attack_type::AttackType,
@@ -67,6 +68,7 @@ fn test(
     mut attack_shader: ResMut<Assets<AttackClipSharder>>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut buffers: ResMut<Assets<ShaderBuffer>>, //GPUに送られる、データたち(配列系は特にここに入れられる(ちなみに全部詰まってるから鍵(handle)が必要))
+    _triangles_handle: Res<TrianglesBufferHandle>,
 ) {
     let test2 = color_materials.add(ColorMaterial {
         color: Color::WHITE,
