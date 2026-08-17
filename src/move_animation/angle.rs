@@ -32,10 +32,7 @@ impl Animations<AngleAnim> {
 
 pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<AngleAnim>, &LifeTimer)>) {
     for (mut transform, mut animations, timer) in query.iter_mut() {
-        let mut remove_indices: Vec<usize> = vec![];
-        for (i, (moving_type, delay, duration, start_fraction, end_fraction)) in
-            animations.iter_mut().enumerate()
-        {
+        for (moving_type, delay, duration, start_fraction, end_fraction) in animations.iter_mut() {
             if *delay <= timer.0 {
                 let t = ((timer.0 - *delay) / *duration).clamp(0.0, 1.0)
                     * (*end_fraction - *start_fraction)
@@ -48,17 +45,13 @@ pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<AngleAn
                         if let Some(start_val) = start {
                             let to_quat = Quat::from_rotation_z(*to);
 
-                            // 目標回転を球面線形補間で計算
                             let target_rotation = start_val.slerp(to_quat, ease.sample_clamped(t))
                                 * start_val.inverse();
 
-                            // 前フレームからの差分を計算（クォータニオンの差分）
                             let rotation_delta = memory.inverse() * target_rotation;
 
-                            // 現在の回転に差分を適用
                             transform.rotation = transform.rotation * rotation_delta;
 
-                            // メモリを更新
                             *memory = target_rotation;
                         }
                     }
@@ -71,12 +64,7 @@ pub fn animation_angle(mut query: Query<(&mut Transform, &mut Animations<AngleAn
                     }
                 }
             }
-            if *delay + *duration <= timer.0 {
-                remove_indices.push(i);
-            }
         }
-        for &index in remove_indices.iter().rev() {
-            animations.0.remove(index);
-        }
+        animations.0.retain(|(_, delay, duration, _, _)| *delay + *duration > timer.0);
     }
 }

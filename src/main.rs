@@ -2,7 +2,7 @@ mod color_scheme;
 use bevy::prelude::*;
 use bevy::render::storage::ShaderBuffer;
 use bevy::window::WindowResolution;
-use bevy_framepace::FramepacePlugin;
+use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 use bevy_vector_shapes::prelude::*;
 use std::f32::consts::PI;
 
@@ -48,6 +48,8 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
         )
+        .add_plugins(FramepacePlugin)
+        .insert_resource(FramepaceSettings::default().with_limiter(Limiter::from_framerate(60.0)))
         .add_plugins(Shape2dPlugin::default())
         .add_plugins(UTEnginePlugin)
         .add_systems(Startup, (camera_setup, test))

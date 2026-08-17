@@ -6,6 +6,7 @@ use crate::helpers::render_layers::FPS_LAYER;
 pub fn update_fps(time: Res<Time>, mut texts: Query<&mut Text2d, With<FpsComponent>>) {
     for mut text in texts.iter_mut() {
         text.0 = format!("fps: {}", 1. / time.delta_secs());
+        println!("fps: {}", 1. / time.delta_secs());
     }
 }
 

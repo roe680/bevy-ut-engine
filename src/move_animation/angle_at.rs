@@ -38,10 +38,7 @@ pub fn animation_angle_at(
     mut query: Query<(&mut Transform, &mut Animations<AngleAtAnim>, &LifeTimer)>,
 ) {
     for (mut transform, mut animations, timer) in query.iter_mut() {
-        let mut remove_indices: Vec<usize> = vec![];
-        for (i, (moving_type, delay, duration, start_fraction, end_fraction)) in
-            animations.iter_mut().enumerate()
-        {
+        for (moving_type, delay, duration, start_fraction, end_fraction) in animations.iter_mut() {
             if *delay <= timer.0 {
                 let t = ((timer.0 - *delay) / *duration).clamp(0.0, 1.0)
                     * (*end_fraction - *start_fraction)
@@ -51,36 +48,28 @@ pub fn animation_angle_at(
                         if start.is_none() {
                             *start = Some(transform.rotation);
                         }
-                        // 初回のみ at_memory を初期化
                         if at_memory.is_none() {
                             *at_memory = Some(transform.translation - *at);
                         }
                         if let (Some(start_val), Some(prev_pos)) = (start, at_memory) {
                             let to_quat = Quat::from_rotation_z(*to);
 
-                            // 目標回転を球面線形補間で計算
                             let target_rotation = start_val.slerp(to_quat, ease.sample_clamped(t))
                                 * start_val.inverse();
-                            // 前フレームの回転
                             let prev_rotation = *angle_memory;
-                            // 回転も更新
                             let rotation_delta = prev_rotation.inverse() * target_rotation;
 
-                            // 今フレームの回転後座標
                             let new_rotated = rotation_delta * *prev_pos;
 
-                            // 差分だけ加算
                             transform.translation += new_rotated - *prev_pos;
 
                             transform.rotation = transform.rotation * rotation_delta;
 
-                            // メモリを更新
                             *angle_memory = target_rotation;
                             *prev_pos = new_rotated;
                         }
                     }
                     AngleAtAnim::AddAngleAt(ease, angle, angle_memory, at, at_memory) => {
-                        // 初回のみ at_memory を初期化
                         if at_memory.is_none() {
                             *at_memory = Some(transform.translation - *at);
                         }
@@ -89,28 +78,19 @@ pub fn animation_angle_at(
                                 Quat::from_rotation_z(*angle * ease.sample_clamped(t));
                             let rotation_delta = angle_memory.inverse() * target_rotation;
 
-                            // 今フレームの回転後座標
                             let curr_rotated = rotation_delta * *prev_pos;
 
-                            // 差分だけ加算
                             transform.translation += curr_rotated - *prev_pos;
 
-                            // 回転も更新
                             transform.rotation = transform.rotation * rotation_delta;
 
-                            // メモリ更新
                             *angle_memory = target_rotation;
                             *at_memory = Some(curr_rotated);
                         }
                     }
                 }
             }
-            if *delay + *duration <= timer.0 {
-                remove_indices.push(i);
-            }
         }
-        for &index in remove_indices.iter().rev() {
-            animations.0.remove(index);
-        }
+        animations.0.retain(|(_, delay, duration, _, _)| *delay + *duration > timer.0);
     }
 }

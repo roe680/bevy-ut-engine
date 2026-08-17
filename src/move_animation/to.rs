@@ -25,10 +25,7 @@ impl Animations<ToAnim> {
 
 pub fn animation_to(mut query: Query<(&mut Transform, &mut Animations<ToAnim>, &LifeTimer)>) {
     for (mut transform, mut animations, timer) in query.iter_mut() {
-        let mut remove_indices: Vec<usize> = vec![];
-        for (i, (to, delay, duration, start_fraction, end_fraction)) in
-            animations.iter_mut().enumerate()
-        {
+        for (to, delay, duration, start_fraction, end_fraction) in animations.iter_mut() {
             if *delay <= timer.0 {
                 let t = ((timer.0 - *delay) / *duration).clamp(0.0, 1.0)
                     * (*end_fraction - *start_fraction)
@@ -51,12 +48,7 @@ pub fn animation_to(mut query: Query<(&mut Transform, &mut Animations<ToAnim>, &
                     }
                 }
             }
-            if *delay + *duration <= timer.0 {
-                remove_indices.push(i);
-            }
         }
-        for &index in remove_indices.iter().rev() {
-            animations.0.remove(index);
-        }
+        animations.0.retain(|(_, delay, duration, _, _)| *delay + *duration > timer.0);
     }
 }

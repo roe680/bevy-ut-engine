@@ -58,10 +58,7 @@ impl Animations<ShapeAnim> {
 
 pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<ShapeAnim>, &LifeTimer)>) {
     for (mut utbox, mut animations, timer) in query.iter_mut() {
-        let mut remove_indices: Vec<usize> = vec![];
-        for (i, (moving_type, delay, duration, start_fraction, end_fraction)) in
-            animations.iter_mut().enumerate()
-        {
+        for (moving_type, delay, duration, start_fraction, end_fraction) in animations.iter_mut() {
             if *delay <= timer.0 {
                 let t = ((timer.0 - *delay) / *duration).clamp(0.0, 1.0)
                     * (*end_fraction - *start_fraction)
@@ -77,7 +74,6 @@ pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<ShapeAnim>,
                         }
                         if let Some(start_val) = start {
                             for i in 0..to.len() {
-                                // 各頂点も lerp の考え方で補間にゃ
                                 let start_x = start_val[i][0];
                                 let start_y = start_val[i][1];
                                 let to_x = to[i][0];
@@ -142,12 +138,7 @@ pub fn animation_shape(mut query: Query<(&mut UTBox, &mut Animations<ShapeAnim>,
                     }
                 }
             }
-            if *delay + *duration <= timer.0 {
-                remove_indices.push(i);
-            }
         }
-        for &index in remove_indices.iter().rev() {
-            animations.0.remove(index);
-        }
+        animations.0.retain(|(_, delay, duration, _, _)| *delay + *duration > timer.0);
     }
 }
