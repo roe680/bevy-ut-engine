@@ -40,7 +40,10 @@ pub fn update_triangle(
     // 形状がなければ全クリア
     if shapes.is_empty() {
         box_triangle.0.clear();
-        buffers.get_mut(&tri_handle.0).unwrap().set_data(Vec::<[[f32; 2]; 3]>::new());
+        buffers
+            .get_mut(&tri_handle.0)
+            .unwrap()
+            .set_data(Vec::<[[f32; 2]; 3]>::new());
 
         for (_, material_handle, _) in clip_entitys.iter() {
             if let Some(mut material) = materials.get_mut(&material_handle.0) {
@@ -57,7 +60,10 @@ pub fn update_triangle(
     let triangulation = shapes.triangulate().to_triangulation::<usize>();
     if triangulation.indices.is_empty() {
         box_triangle.0.clear();
-        buffers.get_mut(&tri_handle.0).unwrap().set_data(Vec::<[[f32; 2]; 3]>::new());
+        buffers
+            .get_mut(&tri_handle.0)
+            .unwrap()
+            .set_data(Vec::<[[f32; 2]; 3]>::new());
 
         for (_, material_handle, _) in clip_entitys.iter() {
             if let Some(mut material) = materials.get_mut(&material_handle.0) {
@@ -85,7 +91,9 @@ pub fn update_triangle(
     box_triangle.0 = triangles;
 
     // GPU 三角形バッファ更新（set_data は値を取るので clone）
-    buffers.get_mut(&tri_handle.0).unwrap()
+    buffers
+        .get_mut(&tri_handle.0)
+        .unwrap()
         .set_data(box_triangle.0.clone());
 
     // クリップ対象がなければここまで
@@ -122,10 +130,10 @@ pub fn update_triangle(
         let indices_u32: Vec<u32> = indices_usize.into_iter().map(|i| i as u32).collect();
 
         if let Some(mut material) = materials.get_mut(&material_handle.0) {
-            if let Some(mut idx_buf) = buffers.get_mut(material.get_indices_handle()) {
-                idx_buf.set_data(indices_u32.clone());
-            }
             material.set_len(indices_u32.len() as u32);
+            if let Some(mut idx_buf) = buffers.get_mut(material.get_indices_handle()) {
+                idx_buf.set_data(indices_u32);
+            }
         }
     }
 }

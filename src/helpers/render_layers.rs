@@ -9,3 +9,4 @@ pub const BOX_LAYER: RenderLayers = RenderLayers::layer(1);
 pub const BOX_LINE_LAYER: RenderLayers = RenderLayers::layer(2);
 pub const INBOX_ATTACK_LAYER: RenderLayers = RenderLayers::layer(3);
 pub const FPS_LAYER: RenderLayers = RenderLayers::layer(63);
+pub const SOUL_LAYER: RenderLayers = RenderLayers::layer(4);

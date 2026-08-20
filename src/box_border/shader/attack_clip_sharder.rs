@@ -3,15 +3,12 @@ use bevy::{
     image::Image,
     prelude::*,
     reflect::TypePath,
-    render::{
-        render_resource::AsBindGroup,
-        storage::ShaderBuffer,
-    },
+    render::{render_resource::AsBindGroup, storage::ShaderBuffer},
     shader::ShaderRef,
     sprite_render::Material2d,
 };
 
-const ATTACK_CLIP_SHARDER: &str = "attack_clip.wgsl";
+const ATTACK_CLIP_SHARDER: &str = "shader/attack_clip.wgsl";
 
 #[derive(Asset, TypePath, Clone, Debug, AsBindGroup)]
 pub struct AttackClipSharder {
