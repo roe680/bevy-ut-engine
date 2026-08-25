@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    helpers::time::LifeTimer,
+    utilities::time::LifeTimer,
     move_animation::moving::{Animations, create_default},
 };
 

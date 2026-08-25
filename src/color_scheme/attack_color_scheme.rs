@@ -4,7 +4,7 @@ use bevy::{
 };
 use bevy_color::Color;
 
-use crate::helpers::attack::attack_type::AttackType;
+use crate::utilities::attack::attack_type::AttackType;
 #[derive(Resource)]
 pub struct AttackColorScheme {
     normal: Color,

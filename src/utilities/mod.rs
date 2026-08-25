@@ -1,7 +1,8 @@
 pub mod attack;
 pub mod enemy_turn_reset;
 pub mod fps_score_write;
-pub mod helpers;
+pub mod geometry;
+pub mod spawn;
 pub mod render_layers;
 pub mod spatial_partition;
 pub mod spawn_camera;

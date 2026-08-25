@@ -1,6 +1,6 @@
 use crate::{
     box_border::{make_synthsis::BoxSynthesis, shader::attack_clip_sharder::AttackClipSharder},
-    helpers::spatial_partition::{
+    utilities::spatial_partition::{
         OptimizedQuadTree, calculate_global_bounds, collect_triangle_indices_for_points,
     },
 };

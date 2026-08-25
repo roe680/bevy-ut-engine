@@ -5,7 +5,7 @@ use crate::{
         make_synthsis::BoxSynthesis,
         update_triangle::BoxTriangle,
     },
-    helpers::render_layers::{BOX_LAYER, BOX_LINE_LAYER, INBOX_ATTACK_LAYER},
+    utilities::render_layers::{BOX_LAYER, BOX_LINE_LAYER, INBOX_ATTACK_LAYER},
 };
 use bevy::{color::palettes::css::BLACK, prelude::*};
 use bevy_vector_shapes::prelude::*;
@@ -15,8 +15,6 @@ use bevy_vector_shapes::prelude::*;
 /// - ここでは `BoxTriangle` リソースを参照して描画のみを担当
 pub fn box_draw(
     mut painter: ShapePainter,
-    _a: Query<(&UTBox, &GlobalTransform, &BoxType, &BoxZIndex, &Visibility)>,
-    _b: Query<(&UTBox, &GlobalTransform, &BoxType, &BoxZIndex), Without<Visibility>>,
     triangles: Res<BoxTriangle>,
     shapes: Res<BoxSynthesis>,
     color_scheme: Res<BoxColorScheme>,

@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use bevy::prelude::*;
 
-use crate::helpers::{enemy_turn_reset::EnemyTurnReset, time::SpawnDelay};
+use crate::utilities::{enemy_turn_reset::EnemyTurnReset, time::SpawnDelay};
 #[derive(Debug, Clone, PartialEq, Component)]
 #[require(Transform {
     translation: Vec3::new(0.0, -60.0, 0.0),

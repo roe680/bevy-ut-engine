@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::helpers::attack::attack_type::AttackType;
+use crate::utilities::attack::attack_type::AttackType;
 #[derive(Resource)]
 pub struct BoxColorScheme {
     pub line_color: Color,

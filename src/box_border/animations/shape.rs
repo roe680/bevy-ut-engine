@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     box_border::box_struct::UTBox,
-    helpers::time::LifeTimer,
+    utilities::time::LifeTimer,
     move_animation::moving::{Animations, create_default},
 };
 

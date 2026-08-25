@@ -3,11 +3,12 @@ use bevy::transform::components::Transform;
 
 use crate::{
     bone::bone_type::BoneStyle,
-    helpers::{attack::damege::DamageValue, time::LifeTimer},
+    utilities::attack::damage::DamageValue,
+    utilities::time::SpawnDelay,
 };
 
 #[derive(Debug, Clone, PartialEq, Component, Default)]
-#[require(Transform, BoneStyle, DamageValue, BoneLength, LifeTimer)]
+#[require(Transform, BoneStyle, DamageValue, BoneLength, SpawnDelay)]
 pub struct Bone;
 
 #[derive(Debug, Clone, PartialEq, Component, Default)]

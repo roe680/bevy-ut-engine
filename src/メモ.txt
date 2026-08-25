@@ -3,3 +3,26 @@ mainとsubの枠を作る
 バトル時基本98x98の中心が(0, -60)らしい(aboabkより)
 セレクト時基本426x98で中心が(0, -60)らしい(aboabkより)
 BoxのRenderLayerは1でBOX_LAYERを使用して欲しい。
+アニメーションつかうならSpawnDelayを使うようにして
+
+=== タイマーシステムのルール (utilities/time.rs) ===
+
+コンポーネントの依存関係:
+  EntityTimer(基底カウンタ)
+  ├─ SpawnDelay(require: EntityTimer + Visibility::Hidden)
+  ├─ LiveDuration(require: EntityTimer)→ 寿命で自動despawn(SpawnDelayなしでも動く)
+  └─ LifeTimer(requireなし)
+
+重要ルール:
+- LifeTimerは絶対に#[require]やスポーン時に付けてはいけない。
+  spawn_entity_on_timerがWithout<LifeTimer>でマッチするため、最初からあると
+  一生マッチせずVisibility::Visibleにならず非表示のまま残る(bone.rsで発生したバグ)。
+  → BoneとUTBoxは必ずSpawnDelayをrequireする方針にした。
+- EntityTimerは直接付けない。SpawnDelayかLiveDurationのどちらかを付けると自動で付く。
+- LifeTimerはEntityTimer >= SpawnDelayになった瞬間、システムが後から挿入する(値=出現後の経過秒)。
+- 全アニメーションシステム(animation_to/angle/size/shape等)は&LifeTimerを要求する。
+  → アニメーションを使うエンティティの最低要件はSpawnDelay(LiveDurationも付けると寿命で消える)。
+
+=== 描画の注意 ===
+- make_synthsis(box側)とbone_draw(bone側)は両方ともVisibility::Visibleのみ描画する。
+  遅延中(Hidden)のエンティティはCSG合成にもボーン描画にも含まれない(damege→damage修正済み)。

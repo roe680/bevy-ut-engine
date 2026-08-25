@@ -1,7 +1,7 @@
 use bevy::color::palettes::css::WHITE;
 use bevy::prelude::*;
 
-use crate::helpers::render_layers::FPS_LAYER;
+use crate::utilities::render_layers::FPS_LAYER;
 
 pub fn update_fps(time: Res<Time>, mut texts: Query<&mut Text2d, With<FpsComponent>>) {
     for mut text in texts.iter_mut() {

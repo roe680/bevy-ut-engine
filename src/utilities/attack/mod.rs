@@ -1,2 +1,2 @@
 pub mod attack_type;
-pub mod damege;
+pub mod damage;

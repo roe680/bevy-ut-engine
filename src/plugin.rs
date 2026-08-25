@@ -6,7 +6,7 @@ use crate::color_scheme::color_scheme_plugin::UTSchemePlugin;
 use crate::soul::soul_plugin::SoulPlugin;
 use crate::{
     box_border::box_plugin::BoxPlugin,
-    helpers::time::{add_time, remove_entity_on_timer, spawn_entity_on_timer},
+    utilities::time::{add_time, remove_entity_on_timer, spawn_entity_on_timer},
     move_animation::ut_animation_plugin::UTAnimationPlugin,
 };
 

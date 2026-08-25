@@ -7,7 +7,7 @@ use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 use bevy_vector_shapes::prelude::*;
 use std::f32::consts::PI;
 
-use crate::helpers::render_layers::SOUL_LAYER;
+use crate::utilities::render_layers::SOUL_LAYER;
 use crate::{
     bone::{
         animations::bone_length::BoneLengthAnim,
@@ -21,9 +21,9 @@ use crate::{
         update_triangle::TrianglesBufferHandle,
     },
     fullscreen_shader::effect::{FullscreenEffect, FullscreenEffectPlugin},
-    helpers::{
+    utilities::{
         attack::attack_type::AttackType,
-        helpers::spawn_vecs,
+        spawn::spawn_vecs,
         render_layers::{BOX_LAYER, BOX_LINE_LAYER, FPS_LAYER, INBOX_ATTACK_LAYER},
         spawn_camera::spawn_camera,
         time::{LiveDuration, SpawnDelay},
@@ -33,7 +33,7 @@ use crate::{
 };
 mod bone;
 mod box_border;
-mod helpers;
+mod utilities;
 mod move_animation;
 mod plugin;
 fn main() {
@@ -57,8 +57,8 @@ fn main() {
         .add_plugins(Shape2dPlugin::default())
         .add_plugins(UTEnginePlugin)
         .add_systems(Startup, (camera_setup, test))
-        .add_systems(Startup, crate::helpers::fps_score_write::setup_fps)
-        .add_systems(Update, crate::helpers::fps_score_write::update_fps)
+        .add_systems(Startup, crate::utilities::fps_score_write::setup_fps)
+        .add_systems(Update, crate::utilities::fps_score_write::update_fps)
         .run();
 }
 fn camera_setup(mut cmds: Commands) {

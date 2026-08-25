@@ -7,17 +7,17 @@ use i_overlay::float::clip::FloatClip;
 use i_overlay::string::clip::ClipRule;
 
 use crate::color_scheme::attack_color_scheme::AttackColorScheme;
-use crate::helpers::attack::attack_type::AttackType;
+use crate::utilities::attack::attack_type::AttackType;
 use crate::{
     bone::bone::{Bone, BoneLength},
     box_border::make_synthsis::BoxSynthesis,
-    helpers::render_layers::INBOX_ATTACK_LAYER,
+    utilities::render_layers::INBOX_ATTACK_LAYER,
 };
 
 pub fn bone_draw(
     shapes: Res<BoxSynthesis>,
     attack_color_scheme: Res<AttackColorScheme>,
-    bones: Query<(&AttackType, &Transform, &BoneLength), With<Bone>>,
+    bones: Query<(&AttackType, &Transform, &BoneLength, &Visibility), With<Bone>>,
     mut painter: ShapePainter,
 ) {
     if shapes.is_empty() {
@@ -29,7 +29,10 @@ pub fn bone_draw(
         boundary_included: false,
     };
 
-    for (attack_type, transform, bone) in bones.iter() {
+    for (attack_type, transform, bone, visibility) in bones.iter() {
+        if !matches!(visibility, Visibility::Visible) {
+            continue;
+        }
         let center = transform.translation.truncate();
         let angle = transform.rotation.to_euler(EulerRot::XYZ).2;
         let dir = Vec2::new(angle.cos(), angle.sin());
